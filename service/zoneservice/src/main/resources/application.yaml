@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: zoneservice
+  cloud:
+    compatibility-verifier:
+      enabled: false  # 호환성 검사 비활성화 (Spring Boot 3.5.7과 Spring Cloud 2024.0.0 호환)
+  datasource:
+    url: jdbc:postgresql://postgres:5432/springdb
+    username: cogiri
+    password: 12341234
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        use_sql_comments: true
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eurekaserver:8761/eureka/
+  instance:
+    hostname: zoneservice
+    prefer-ip-address: false

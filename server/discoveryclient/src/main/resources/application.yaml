@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: discoveryclient
+  config:
+    import: optional:configserver:http://configserver:8888
+  cloud:
+    config:
+      uri: http://configserver:8888
+    compatibility-verifier:
+      enabled: false  # 호환성 검사 비활성화 (Spring Boot 3.5.7과 Spring Cloud 2024.0.0 호환)
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eurekaserver:8761/eureka/
+  instance:
+    hostname: discoveryclient
+    prefer-ip-address: false

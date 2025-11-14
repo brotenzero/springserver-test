@@ -1,0 +1,171 @@
+version: '3.8'
+
+services:
+  # Eureka Server - Service Discovery
+  eurekaserver:
+    build:
+      context: .
+      dockerfile: ./server/eurekaserver/Dockerfile
+    container_name: eurekaserver
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_APPLICATION_NAME=eurekaserver
+    networks:
+      - spring-network
+
+  # Config Server
+  configserver:
+    build:
+      context: .
+      dockerfile: ./server/configserver/Dockerfile
+    container_name: configserver
+    ports:
+      - "8888:8888"
+    environment:
+      - SPRING_APPLICATION_NAME=configserver
+      - SPRING_PROFILES_ACTIVE=native
+    networks:
+      - spring-network
+    depends_on:
+      - eurekaserver
+
+  # Discovery Client (API Gateway)
+  discoveryclient:
+    build:
+      context: .
+      dockerfile: ./server/discoveryclient/Dockerfile
+    container_name: discoveryclient
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_APPLICATION_NAME=discoveryclient
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eurekaserver:8761/eureka/
+      - SPRING_CLOUD_CONFIG_URI=http://configserver:8888
+    networks:
+      - spring-network
+    depends_on:
+      - eurekaserver
+      - configserver
+
+  # Common Service
+  common:
+    build:
+      context: .
+      dockerfile: ./service/common/Dockerfile
+    container_name: common-service
+    ports:
+      - "8081:8080"
+    environment:
+      - SPRING_APPLICATION_NAME=common
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eurekaserver:8761/eureka/
+      - SPRING_CLOUD_CONFIG_URI=http://configserver:8888
+    networks:
+      - spring-network
+    depends_on:
+      - eurekaserver
+      - configserver
+      - postgres
+
+  # Soccer Service
+  soccerservice:
+    build:
+      context: .
+      dockerfile: ./service/soccerservice/Dockerfile
+    container_name: soccerservice
+    ports:
+      - "8082:8080"
+    environment:
+      - SPRING_APPLICATION_NAME=soccerservice
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eurekaserver:8761/eureka/
+      - SPRING_CLOUD_CONFIG_URI=http://configserver:8888
+    networks:
+      - spring-network
+    depends_on:
+      - eurekaserver
+      - configserver
+      - postgres
+
+  # User Service
+  userservice:
+    build:
+      context: .
+      dockerfile: ./service/userservice/Dockerfile
+    container_name: userservice
+    ports:
+      - "8083:8080"
+    environment:
+      - SPRING_APPLICATION_NAME=userservice
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eurekaserver:8761/eureka/
+      - SPRING_CLOUD_CONFIG_URI=http://configserver:8888
+    networks:
+      - spring-network
+    depends_on:
+      - eurekaserver
+      - configserver
+      - postgres
+
+  # Zone Service
+  zoneservice:
+    build:
+      context: .
+      dockerfile: ./service/zoneservice/Dockerfile
+    container_name: zoneservice
+    ports:
+      - "8084:8080"
+    environment:
+      - SPRING_APPLICATION_NAME=zoneservice
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eurekaserver:8761/eureka/
+      - SPRING_CLOUD_CONFIG_URI=http://configserver:8888
+    networks:
+      - spring-network
+    depends_on:
+      - eurekaserver
+      - configserver
+      - postgres
+
+  # ZThree Service
+  zthreeservice:
+    build:
+      context: .
+      dockerfile: ./service/zthreeservice/Dockerfile
+    container_name: zthreeservice
+    ports:
+      - "8085:8080"
+    environment:
+      - SPRING_APPLICATION_NAME=zthreeservice
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eurekaserver:8761/eureka/
+      - SPRING_CLOUD_CONFIG_URI=http://configserver:8888
+    networks:
+      - spring-network
+    depends_on:
+      - eurekaserver
+      - configserver
+      - postgres
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=springdb
+      - POSTGRES_USER=cogiri
+      - POSTGRES_PASSWORD=12341234
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - spring-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U cogiri -d springdb" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  spring-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
