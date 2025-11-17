@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.brobrown.soccerservice.common.Messenger;
@@ -22,7 +23,6 @@ import lombok.RequiredArgsConstructor;
 
 public class PlayerController {
     private final PlayerService playerService;
-
 
     @PostMapping("/save")
     public ResponseEntity<Messenger> save(@RequestBody PlayerModel playerDTO) {
@@ -52,5 +52,34 @@ public class PlayerController {
     @GetMapping("/all")
     public ResponseEntity<Messenger> findAll() {
         return ResponseEntity.ok(playerService.findAll());
+    }
+
+    /**
+     * 키워드로 선수 검색
+     * Eureka Discovery를 거쳐 이 컨트롤러로 도달한 데이터를 sysout으로 확인
+     * 
+     * @param keyword 검색어
+     * @return 검색 결과
+     */
+    @GetMapping("/search")
+    public ResponseEntity<Messenger> searchByKeyword(@RequestParam String keyword) {
+        System.out.println("========================================");
+        System.out.println("=== PlayerController: 검색 요청 수신 ===");
+        System.out.println("검색어: " + keyword);
+        System.out.println("요청 경로: /player/search");
+        System.out.println("========================================");
+
+        // PlayerService를 통해 데이터 조회
+        Messenger result = playerService.findByKeyword(keyword);
+
+        System.out.println("=== PlayerController: 검색 결과 ===");
+        System.out.println("결과 코드: " + result.getCode());
+        System.out.println("결과 메시지: " + result.getMessage());
+        if (result.getData() != null) {
+            System.out.println("결과 데이터: " + result.getData());
+        }
+        System.out.println("========================================");
+
+        return ResponseEntity.ok(result);
     }
 }

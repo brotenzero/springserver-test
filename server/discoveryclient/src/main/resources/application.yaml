@@ -8,6 +8,60 @@ spring:
       uri: http://configserver:8888
     compatibility-verifier:
       enabled: false  # 호환성 검사 비활성화 (Spring Boot 3.5.7과 Spring Cloud 2024.0.0 호환)
+    gateway:
+      routes:
+        # Soccer Service 라우팅
+        - id: soccerservice
+          uri: lb://soccerservice
+          predicates:
+            - Path=/soccer/**
+          filters:
+            - StripPrefix=1
+        # User Service 라우팅
+        - id: userservice
+          uri: lb://userservice
+          predicates:
+            - Path=/user/**
+          filters:
+            - StripPrefix=1
+        # Common Service 라우팅
+        - id: common
+          uri: lb://common
+          predicates:
+            - Path=/common/**
+          filters:
+            - StripPrefix=1
+        # Zone Service 라우팅
+        - id: zoneservice
+          uri: lb://zoneservice
+          predicates:
+            - Path=/zone/**
+          filters:
+            - StripPrefix=1
+        # ZThree Service 라우팅
+        - id: zthreeservice
+          uri: lb://zthreeservice
+          predicates:
+            - Path=/zthree/**
+          filters:
+            - StripPrefix=1
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:3000"
+              - "http://frontend-app:3000"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+              - PATCH
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
+            maxAge: 3600
 
 eureka:
   client:
