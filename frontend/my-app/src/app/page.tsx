@@ -1,18 +1,20 @@
 "use client";
 
-import React, { useState } from "react";
-
-interface Message {
-  id: number;
-  role: "user" | "assistant";
-  content: string;
-}
+import React from "react";
+import { useStore } from "@/store";
+import { Message } from "@/store/types";
 
 export default function Home() {
-  const [messages, setMessages] = useState<Message[]>([
-    { id: 1, role: "assistant", content: "안녕하세요! 무엇을 도와드릴까요?" },
-  ]);
-  const [input, setInput] = useState("");
+  // Zustand Store에서 상태 가져오기
+  const messages = useStore((state) => state.messages);
+  const input = useStore((state) => state.input);
+  const loading = useStore((state) => state.loading);
+
+  // Actions
+  const setInput = useStore((state) => state.setInput);
+  const addMessage = useStore((state) => state.addMessage);
+  const setLoading = useStore((state) => state.setLoading);
+  const setError = useStore((state) => state.setError);
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -20,49 +22,54 @@ export default function Home() {
     // textarea 안의 글자를 alert로 띄우기
     alert(input);
 
-    const newMessage: Message = { id: messages.length + 1, role: "user", content: input };
-    const updatedMessages: Message[] = [...messages, newMessage];
-    setMessages(updatedMessages);
+    const currentInput = input;
+
+    // 사용자 메시지 추가 (ID는 자동 생성)
+    addMessage({
+      role: "user",
+      content: currentInput,
+    });
     setInput("");
-    console.log("입력한 검색어 :  ", updatedMessages);
+    console.log("입력한 검색어 :  ", currentInput);
+
+    // 로딩 시작
+    setLoading(true);
+    setError(null);
 
     // 백엔드 API로 검색어 전송 (API Gateway 패턴 사용)
     // Eureka Discovery를 거쳐 soccerservice → SoccerSearchController → SoccerSearchFacade → PlayerService로 데이터 이동
     try {
       const { soccerService } = await import('@/services/soccer.service');
       const data = await soccerService.searchByKeyword({
-        keyword: input,
+        keyword: currentInput,
         type: "player",
       });
       console.log("백엔드 응답:", data);
 
       // 검색 결과를 메시지로 표시
       if (data && data.length > 0) {
-        const searchResult: Message = {
-          id: updatedMessages.length + 1,
+        addMessage({
           role: "assistant",
           content: `검색 결과를 찾았습니다: ${data.length}개의 결과가 있습니다.`,
-        };
-        setMessages((prev: Message[]) => [...prev, searchResult]);
+        });
       }
     } catch (error) {
       console.error("API 요청 중 오류 발생:", error);
-      const errorMessage: Message = {
-        id: updatedMessages.length + 1,
+      addMessage({
         role: "assistant",
         content: "검색 중 오류가 발생했습니다. 다시 시도해주세요.",
-      };
-      setMessages((prev: Message[]) => [...prev, errorMessage]);
+      });
+      setError(error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.");
+    } finally {
+      setLoading(false);
     }
 
     // AI 응답 시뮬레이션
     setTimeout(() => {
-      const aiResponse: Message = {
-        id: updatedMessages.length + 1,
+      addMessage({
         role: "assistant",
         content: "메시지를 받았습니다. 실제 AI 연동은 백엔드 API를 통해 구현할 수 있습니다.",
-      };
-      setMessages((prev: Message[]) => [...prev, aiResponse]);
+      });
     }, 500);
   };
 
@@ -160,10 +167,11 @@ export default function Home() {
                 placeholder="메시지를 입력하세요..."
                 className="flex-1 bg-transparent px-4 py-3 text-white placeholder-gray-400 resize-none focus:outline-none max-h-32"
                 rows={1}
+                disabled={loading}
               />
               <button
                 onClick={handleSend}
-                disabled={!input.trim()}
+                disabled={!input.trim() || loading}
                 className="m-2 p-2 rounded-lg bg-gray-600 hover:bg-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <svg
